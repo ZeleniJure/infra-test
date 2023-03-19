@@ -1,0 +1,10 @@
+---
+- name: get facts
+  hosts: "{{ target | default('docker') }}"
+  tasks:
+   - name: Ping my hosts
+     ansible.builtin.ping:
+
+   - name: Print all available facts
+     ansible.builtin.debug:
+       var: ansible_facts

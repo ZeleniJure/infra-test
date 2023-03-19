@@ -1,0 +1,34 @@
+version: '3.10'
+
+services:
+  # Runs 3 simulated VMs
+  server1: &server
+    build:
+      context: ./docker
+      dockerfile: Dockerfile.simulator
+    container_name: server1
+    restart: always
+    tty: true
+    ports:
+      - "2201:22"
+
+  server2:
+    <<: *server
+    container_name: server2
+    ports:
+      - "2202:22"
+
+  server3:
+    <<: *server
+    container_name: server3
+    ports:
+      - "2203:22"
+      - "8500:8500"
+      - "8600:8600/tcp"
+      - "8600:8600/udp"
+
+  consul-client:
+    image: hashicorp/consul:1.15.1
+    container_name: consul-client
+    restart: always
+    command: "agent -node=client1 -retry-join server1 -datacenter dc-test"

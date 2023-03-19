@@ -1,0 +1,38 @@
+---
+
+- name: enable consul
+  systemd:
+    name: consul.service
+    enabled: true
+    masked: false
+    daemon_reload: true
+  when: ansible_service_mgr != 'sshd'
+
+- name: start consul
+  systemd:
+    name: consul.service
+    state: started
+  when: ansible_service_mgr != 'sshd'
+
+
+- name: (re)start consul (with command)
+  listen: start consul
+  shell:
+    cmd: |
+      PID=$(pgrep consul)
+      if [ "$PID" ] ; then
+              echo "Killing consul..."
+              kill "$PID"
+      fi
+      /usr/local/bin/consul agent -config-dir {{ consul_config_path }} &
+      sleep 1
+      pidof consul
+  when: ansible_service_mgr == 'sshd'
+  register: consul_pid
+  failed_when: consul_pid.rc != 0
+
+# TODO: add OpenRC config file and use this instead:
+# - name: start consul
+#   ansible.builtin.service:
+#     name: consul
+#     state: started

@@ -1,0 +1,22 @@
+---
+
+- name: generate untagged node settings
+  copy:
+    content: "{{ item.content | to_json }}"
+    dest: "{{ consul_config_path }}/{{ item.name }}.json"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  when: item.node_type is undefined
+  loop: "{{ consul_node_settings }}"
+
+- name: generate specific (client/server) node settings
+  copy:
+    content: "{{ item.content | to_json }}"
+    dest: "{{ consul_config_path }}/{{ item.name }}.json"
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  when:
+    - item.node_type is defined
+    - node_type == item.node_type
+  loop: "{{ consul_node_settings }}"
+

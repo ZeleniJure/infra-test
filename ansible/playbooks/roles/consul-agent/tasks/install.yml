@@ -1,0 +1,76 @@
+---
+
+- name: get platform
+  set_fact:
+    consul_arch: "{{ ansible_architecture | to_go_arch }}"
+
+- name: extract and install consul
+  # TODO: This should be a local mirror. Could also set up apt...
+  unarchive:
+    src: "https://releases.hashicorp.com/consul/{{ consul_version }}/consul_{{ consul_version }}_linux_{{ consul_arch }}.zip"
+    dest: "/tmp/"
+    remote_src: true
+
+- name: copy consul and apend the version
+  copy:
+    remote_src: true
+    src: "/tmp/consul"
+    dest: "/usr/local/bin/consul-{{ consul_version }}"
+    mode: 0755
+
+- name: activate this consul version
+  alternatives:
+    name: consul
+    path: "/usr/local/bin/consul-{{ consul_version }}"
+    link: "/usr/local/bin/consul"
+    priority: 100
+
+- name: create consul group
+  group:
+    name: "{{ consul_group }}"
+    gid: "8500"
+    state: present
+
+- name: create consul user
+  user:
+    name: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+    home: "{{ consul_config_path }}"
+    system: true
+    shell: /bin/false
+    uid: "8500"
+    state: present
+
+- name: make configured data_dir
+  file:
+    dest: "{{ item }}"
+    state: directory
+    recurse: true
+    owner: "{{ consul_user }}"
+    group: "{{ consul_group }}"
+  loop:
+    - "{{ consul_config_path }}"
+    - "/var/consul"
+
+- name: make systemd directory if not already
+  file:
+    dest: "{{ item }}"
+    state: directory
+    recurse: true
+  loop:
+    - "/etc/systemd/system"
+    - "/etc/systemd/resolved.conf.d"
+    - "/etc/systemd/system/consul.service.d"
+
+
+- name: apply systemd-resolved for consul
+  template:
+    src: resolved.conf.j2
+    dest: "/etc/systemd/resolved.conf.d/10-consul.conf"
+    owner: "{{ consul_user }}"
+
+- name: apply systemd service file
+  template:
+    src: consul.service.j2
+    dest: "/etc/systemd/system/consul.service.d/consul.service"
+  notify: enable consul

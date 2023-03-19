@@ -1,0 +1,9 @@
+---
+- name: include vars
+  include_vars: "provision.yaml"
+
+- name: install
+  include_tasks: install.yml
+
+- name: generate consul settings
+  include_tasks: generate.yml

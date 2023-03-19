@@ -1,0 +1,13 @@
+---
+- name: Install Consul to the local simulator
+  hosts: "{{ target | default('docker') }}"
+  roles:
+    - consul-agent
+  vars:
+    # Because I don't know how to format this to be int instead of string when scaffolding :/
+    bootstrap_expect: 3
+  tasks:
+   - name: Start service
+     command: "echo Starting Consul..."
+     notify:
+       - start consul

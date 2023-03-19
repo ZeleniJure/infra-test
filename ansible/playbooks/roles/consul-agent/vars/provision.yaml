@@ -1,0 +1,103 @@
+---
+
+# all the config settings for consul
+# https://developer.hashicorp.com/consul/docs/agent/config/config-files
+consul_node_settings:
+
+  - name: 00-server
+    node_type: server
+    content:
+      # set the quorum limit for the servers
+      bootstrap_expect: "{{ bootstrap_expect }}"
+      leave_on_terminate: true
+      # use server node
+      server: true
+      # use web ui
+      ui_config:
+        enabled: true
+      # enable script checks only in localhost
+      enable_local_script_checks: true
+      # disable remote exec commands
+      disable_remote_exec: true
+      # set the log level setting
+      log_level: "info"
+      # what to use for the domain on connection
+      domain: "{{ consul_domain }}"
+      # rejoin after leave
+      rejoin_after_leave: true
+      connect:
+        # use server node
+        enabled: true
+
+  - name: 90-runtime
+    content:
+      # list of consul nodes to join
+      retry_join: "{{ ansible_play_hosts_all }}"
+      # datacenter to associate node with
+      datacenter: "{{ consul_datacenter }}"
+      # persistent data folder
+      data_dir: "/var/consul"
+      # rejoin the cluster of leaving
+      rejoin_after_leave: true
+      # set node-id from consul_node_name
+      node_id: "{{ inventory_hostname | to_uuid }}"
+      # set the node name
+      node_name: "{{ inventory_hostname }}"
+
+  - name: 10-connection
+    content:
+      # TODO use go-sockaddr to retrieve the bind address using something like "bind_addr": "{{ GetPrivateIP }}" with !unsafe
+      bind_addr: "0.0.0.0"
+      client_addr: "0.0.0.0"
+      advertise_addr: "{{ ansible_default_ipv4.address|default(ansible_all_ipv4_addresses[0]) }}"
+     
+
+  - name: 10-ports
+    content:
+      ports:
+        # DNS server, -1 to disable
+        dns: 53
+        # HTTP API, -1 to disable
+        http: 8500
+        # HTTPS API, -1 to disable
+        https: -1
+        # GRPC port, -1 to disable
+        grpc: 8502
+        # server RPC address
+        server: 8300
+        # Serf LAN port
+        serf_lan: 8301
+        # Serf WAN port
+        serf_wan: 8302
+        # sidecar minimum port range
+        sidecar_min_port: 20000
+        # sidecar maximum port range
+        sidecar_max_port: 30000
+
+  - name: 10-cache
+    content:
+      dns_config:
+        # only do DNS lookup to passing. No warning or critical
+        only_passing: true
+        # enable DNS cache
+        use_cache: true
+        # set how long cache should be kept. Set to 24 hr
+        cache_max_age: 86400s
+        # how long to wait before doing a node lookup
+        node_ttl: 10s
+        # how long to wait before doing a service lookup
+        service_ttl:
+          "*": 10s
+        soa:
+          # how long to wait before expiring a service. Set to 12 hr
+          expire: 43200
+          # set limit for TTL of a service. 0 means no limit
+          min_ttl: 60
+          # how long to wait before refresh. Set to 60 m
+          refresh: 3600
+
+  - name: 90-telemetry
+    content:
+      telemetry:
+        disable_hostname: true
+        prometheus_retention_time: "30s"

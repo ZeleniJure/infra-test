@@ -1,0 +1,13 @@
+docker:
+  hosts:
+    server1:
+      ansible_port: 2201
+    server2:
+      ansible_port: 2202
+    server3:
+      ansible_port: 2203
+  vars:
+    ansible_host: localhost
+    ansible_user: root
+    ansible_password: korenina
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
